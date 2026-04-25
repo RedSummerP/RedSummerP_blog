@@ -81,6 +81,11 @@ export async function updateLocalUser(
   return user;
 }
 
+export async function countLocalUsers(): Promise<number> {
+  const rows = await getDb().select().from(localUsers).limit(1);
+  return rows.length;
+}
+
 export async function seedAdminIfNoneExists(): Promise<void> {
   const existing = await getDb().select().from(localUsers).limit(1);
   if (existing.length === 0) {

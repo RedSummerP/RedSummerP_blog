@@ -10,6 +10,7 @@ import {
   verifyLocalPassword,
   createLocalUser,
   updateLocalUser,
+  countLocalUsers,
 } from "./queries/local-users";
 import {
   signLocalSessionToken,
@@ -93,7 +94,7 @@ export const localAuthRouter = createRouter({
         name: z.string().max(255).optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const existing = await findLocalUserByUsername(input.username);
       if (existing) {
         throw new TRPCError({
@@ -102,11 +103,31 @@ export const localAuthRouter = createRouter({
         });
       }
 
+      const isFirstUser = (await countLocalUsers()) === 0;
+
       const user = await createLocalUser({
         username: input.username,
         password: input.password,
         name: input.name,
+        role: isFirstUser ? "admin" : "user",
       });
+
+      const token = await signLocalSessionToken({
+        username: user.username,
+        userId: user.id,
+      });
+
+      const opts = getSessionCookieOptions(ctx.req.headers);
+      ctx.resHeaders.append(
+        "set-cookie",
+        cookie.serialize(Session.cookieName, token, {
+          httpOnly: opts.httpOnly,
+          path: opts.path,
+          sameSite: opts.sameSite?.toLowerCase() as "lax" | "none",
+          secure: opts.secure,
+          maxAge: Session.maxAgeMs / 1000,
+        }),
+      );
 
       return {
         id: user.id,
