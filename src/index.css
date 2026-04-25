@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, [data-theme="light"] {
+    --bg-warm-white: #F4F1EC;
+    --text-charcoal: #1A1A1A;
+    --text-grey: #6B6B6B;
+    --accent-teal: #2D6A65;
+    --border-light: #E0DDD8;
+
+    --background: 40 18% 94%;
+    --foreground: 0 0% 10%;
+    --card: 40 18% 94%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 40 18% 94%;
+    --secondary: 40 10% 88%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 40 10% 88%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 174 40% 29%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 10% 86%;
+    --input: 30 10% 86%;
+    --ring: 174 40% 29%;
+    --radius: 0.25rem;
+  }
+
+  [data-theme="dark"] {
+    --bg-warm-white: #0D0D0D;
+    --text-charcoal: #F0F0F0;
+    --text-grey: #888888;
+    --accent-teal: #5AAAA4;
+    --border-light: #2A2A2A;
+
+    --background: 0 0% 5%;
+    --foreground: 0 0% 94%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 94%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 94%;
+    --primary: 0 0% 94%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 94%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 53%;
+    --accent: 174 30% 52%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 174 30% 52%;
+  }
+
+  body {
+    font-family: 'Space Mono', monospace;
+    background-color: var(--bg-warm-white);
+    color: var(--text-charcoal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  ::selection {
+    background-color: var(--text-charcoal);
+    color: var(--bg-warm-white);
+  }
+
+  [data-theme="dark"] ::selection {
+    background-color: #F0F0F0;
+    color: #0D0D0D;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-grey);
+  }
+}
