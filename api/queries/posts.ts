@@ -18,6 +18,14 @@ export async function findPublicPosts() {
     .orderBy(asc(posts.sortOrder));
 }
 
+export async function findPostsByUserId(userId: number) {
+  return getDb()
+    .select()
+    .from(posts)
+    .where(eq(posts.userId, userId))
+    .orderBy(asc(posts.sortOrder));
+}
+
 export async function findPostById(id: number) {
   const rows = await getDb()
     .select()

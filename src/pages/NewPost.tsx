@@ -8,7 +8,7 @@ import ImageUpload from "@/components/ImageUpload";
 export default function NewPost() {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
 
   const [form, setForm] = useState({
@@ -22,12 +22,13 @@ export default function NewPost() {
   const createPost = trpc.blog.create.useMutation({
     onSuccess: () => {
       utils.blog.list.invalidate();
-      navigate("/");
+      utils.blog.listMine.invalidate();
+      navigate("/profile");
     },
   });
 
-  if (!isAdmin) {
-    navigate("/");
+  if (!isAuthenticated) {
+    navigate("/login");
     return null;
   }
 

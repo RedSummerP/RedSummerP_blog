@@ -49,6 +49,7 @@ export type InsertLocalUser = typeof localUsers.$inferInsert;
 
 export const posts = mysqlTable("posts", {
   id: serial("id").primaryKey(),
+  userId: int("userId"),
   year: varchar("year", { length: 10 }).notNull(),
   image: varchar("image", { length: 500 }).notNull(),
   sortOrder: int("sortOrder").default(0),

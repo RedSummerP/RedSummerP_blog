@@ -1,8 +1,10 @@
 import { z } from "zod";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import { TRPCError } from "@trpc/server";
+import { createRouter, publicQuery, adminQuery, authedQuery } from "./middleware";
 import {
   findAllPosts,
   findPublicPosts,
+  findPostsByUserId,
   findPostById,
   createPost,
   updatePost,
@@ -14,6 +16,11 @@ export const blogRouter = createRouter({
 
   listAdmin: adminQuery.query(async () => findAllPosts()),
 
+  listMine: authedQuery.query(async ({ ctx }) => {
+    if (!ctx.user) return [];
+    return findPostsByUserId(ctx.user.id);
+  }),
+
   byId: publicQuery
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
@@ -21,7 +28,7 @@ export const blogRouter = createRouter({
       return post;
     }),
 
-  create: adminQuery
+  create: authedQuery
     .input(
       z.object({
         year: z.string().max(10),
@@ -40,9 +47,11 @@ export const blogRouter = createRouter({
         enDetailContent: z.string(),
       }),
     )
-    .mutation(async ({ input }) => createPost(input)),
+    .mutation(async ({ input, ctx }) => {
+      return createPost({ ...input, userId: ctx.user?.id ?? null });
+    }),
 
-  update: adminQuery
+  update: authedQuery
     .input(
       z.object({
         id: z.number(),
@@ -62,14 +71,24 @@ export const blogRouter = createRouter({
         enDetailContent: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
+      const existing = await findPostById(id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+      if (existing.userId !== ctx.user?.id && ctx.user?.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own posts" });
+      }
       return updatePost(id, data);
     }),
 
-  delete: adminQuery
+  delete: authedQuery
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const existing = await findPostById(input.id);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+      if (existing.userId !== ctx.user?.id && ctx.user?.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only delete your own posts" });
+      }
       await deletePost(input.id);
       return { success: true };
     }),
