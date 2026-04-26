@@ -33,7 +33,7 @@ export default function Profile() {
       newPost: "+ 写文章",
       myArticles: "我的文章",
       loading: "加载中...",
-      empty: "还没有文章，点击"写文章"开始创作吧",
+      empty: `还没有文章，点击"写文章"开始创作吧`,
       edit: "编辑",
       delete: "删除",
       view: "查看",
