@@ -18,6 +18,7 @@ export default function NewPost() {
     zhTitle: "", zhSubtitle: "", zhCollection: "", zhContent: "", zhDetailContent: "",
     enTitle: "", enSubtitle: "", enCollection: "", enContent: "", enDetailContent: "",
   });
+  const [showEnglish, setShowEnglish] = useState(false);
 
   const createPost = trpc.blog.create.useMutation({
     onSuccess: () => {
@@ -32,14 +33,75 @@ export default function NewPost() {
     return null;
   }
 
+  const syncEnglish = () => {
+    setForm((prev) => ({
+      ...prev,
+      enTitle: prev.enTitle || prev.zhTitle,
+      enSubtitle: prev.enSubtitle || prev.zhSubtitle,
+      enCollection: prev.enCollection || prev.zhCollection,
+      enContent: prev.enContent || prev.zhContent,
+      enDetailContent: prev.enDetailContent || prev.zhDetailContent,
+    }));
+  };
+
   const handleSubmit = () => {
-    if (!form.zhTitle || !form.enTitle) return;
-    createPost.mutate({ ...form, sortOrder: 0 });
+    if (!form.zhTitle) return;
+    // If English fields are empty, auto-fill with Chinese
+    const payload = {
+      ...form,
+      enTitle: form.enTitle || form.zhTitle,
+      enSubtitle: form.enSubtitle || form.zhSubtitle,
+      enCollection: form.enCollection || form.zhCollection,
+      enContent: form.enContent || form.zhContent,
+      enDetailContent: form.enDetailContent || form.zhDetailContent,
+      sortOrder: 0,
+    };
+    createPost.mutate(payload);
   };
 
   const t = {
-    zh: { title: "新建文章", back: "返回", submit: "发布", submitting: "发布中...", required: "标题为必填项" },
-    en: { title: "New Post", back: "Back", submit: "Publish", submitting: "Publishing...", required: "Title is required" },
+    zh: {
+      title: "新建文章",
+      back: "返回",
+      submit: "发布",
+      submitting: "发布中...",
+      required: "标题为必填项",
+      syncEnglish: "🔄 同步生成英文",
+      showEnglish: "展开英文 ▼",
+      hideEnglish: "收起英文 ▲",
+      year: "年份",
+      visibility: "可见性",
+      public: "公开",
+      private: "私密",
+      zhContentLabel: "中文内容",
+      enContentLabel: "English Content",
+      titlePlaceholder: "标题",
+      subtitlePlaceholder: "副标题",
+      collectionPlaceholder: "分类",
+      summaryPlaceholder: "摘要内容",
+      detailPlaceholder: "详细内容",
+    },
+    en: {
+      title: "New Post",
+      back: "Back",
+      submit: "Publish",
+      submitting: "Publishing...",
+      required: "Title is required",
+      syncEnglish: "🔄 Sync to English",
+      showEnglish: "Show English ▼",
+      hideEnglish: "Hide English ▲",
+      year: "Year",
+      visibility: "Visibility",
+      public: "Public",
+      private: "Private",
+      zhContentLabel: "Chinese Content",
+      enContentLabel: "English Content",
+      titlePlaceholder: "Title",
+      subtitlePlaceholder: "Subtitle",
+      collectionPlaceholder: "Collection",
+      summaryPlaceholder: "Summary content",
+      detailPlaceholder: "Detail content",
+    },
   };
   const s = t[language === "zh" ? "zh" : "en"];
 
@@ -58,10 +120,10 @@ export default function NewPost() {
     <div className="min-h-screen" style={{ backgroundColor: "var(--bg-warm-white)" }}>
       {/* Top Bar */}
       <header className="fixed top-0 left-0 right-0 flex items-center justify-between px-6" style={{ height: "40px", zIndex: 50, backgroundColor: "var(--bg-warm-white)", borderBottom: "1px solid var(--border-light)" }}>
-        <button onClick={() => navigate("/")} style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer" }}>
+        <button onClick={() => navigate("/profile")} style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer" }}>
           NEURAL ATELIER (BLOG)
         </button>
-        <button onClick={() => navigate("/")} style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer" }}>
+        <button onClick={() => navigate("/profile")} style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer" }}>
           {s.back}
         </button>
       </header>
@@ -73,11 +135,11 @@ export default function NewPost() {
         <div className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
-              <label style={{ fontSize: "11px", color: "var(--text-grey)", display: "block", marginBottom: "4px" }}>Year</label>
+              <label style={{ fontSize: "11px", color: "var(--text-grey)", display: "block", marginBottom: "4px" }}>{s.year}</label>
               <input value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} style={inputStyle} />
             </div>
             <div>
-              <label style={{ fontSize: "11px", color: "var(--text-grey)", display: "block", marginBottom: "4px" }}>{language === "zh" ? "可见性" : "Visibility"}</label>
+              <label style={{ fontSize: "11px", color: "var(--text-grey)", display: "block", marginBottom: "4px" }}>{s.visibility}</label>
               <button
                 onClick={() => setForm({ ...form, isPublic: !form.isPublic })}
                 style={{
@@ -89,7 +151,7 @@ export default function NewPost() {
                   fontFamily: "'Space Mono', monospace",
                 }}
               >
-                {form.isPublic ? (language === "zh" ? "公开" : "PUBLIC") : (language === "zh" ? "私密" : "PRIVATE")}
+                {form.isPublic ? s.public : s.private}
               </button>
             </div>
           </div>
@@ -103,27 +165,65 @@ export default function NewPost() {
             />
           </div>
 
+          {/* Chinese Content */}
           <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "16px" }}>
-            <h3 style={{ fontSize: "12px", color: "var(--text-grey)", marginBottom: "12px" }}>中文内容</h3>
+            <h3 style={{ fontSize: "12px", color: "var(--text-grey)", marginBottom: "12px" }}>{s.zhContentLabel}</h3>
             <div className="space-y-3">
-              <input placeholder="标题" value={form.zhTitle} onChange={(e) => setForm({ ...form, zhTitle: e.target.value })} style={inputStyle} />
-              <input placeholder="副标题" value={form.zhSubtitle} onChange={(e) => setForm({ ...form, zhSubtitle: e.target.value })} style={inputStyle} />
-              <input placeholder="分类" value={form.zhCollection} onChange={(e) => setForm({ ...form, zhCollection: e.target.value })} style={inputStyle} />
-              <textarea placeholder="摘要内容" value={form.zhContent} onChange={(e) => setForm({ ...form, zhContent: e.target.value })} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
-              <textarea placeholder="详细内容" value={form.zhDetailContent} onChange={(e) => setForm({ ...form, zhDetailContent: e.target.value })} rows={6} style={{ ...inputStyle, resize: "vertical" }} />
+              <input placeholder={s.titlePlaceholder} value={form.zhTitle} onChange={(e) => setForm({ ...form, zhTitle: e.target.value })} style={inputStyle} />
+              <input placeholder={s.subtitlePlaceholder} value={form.zhSubtitle} onChange={(e) => setForm({ ...form, zhSubtitle: e.target.value })} style={inputStyle} />
+              <input placeholder={s.collectionPlaceholder} value={form.zhCollection} onChange={(e) => setForm({ ...form, zhCollection: e.target.value })} style={inputStyle} />
+              <textarea placeholder={s.summaryPlaceholder} value={form.zhContent} onChange={(e) => setForm({ ...form, zhContent: e.target.value })} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+              <textarea placeholder={s.detailPlaceholder} value={form.zhDetailContent} onChange={(e) => setForm({ ...form, zhDetailContent: e.target.value })} rows={6} style={{ ...inputStyle, resize: "vertical" }} />
             </div>
           </div>
 
-          <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "16px" }}>
-            <h3 style={{ fontSize: "12px", color: "var(--text-grey)", marginBottom: "12px" }}>English Content</h3>
-            <div className="space-y-3">
-              <input placeholder="Title" value={form.enTitle} onChange={(e) => setForm({ ...form, enTitle: e.target.value })} style={inputStyle} />
-              <input placeholder="Subtitle" value={form.enSubtitle} onChange={(e) => setForm({ ...form, enSubtitle: e.target.value })} style={inputStyle} />
-              <input placeholder="Collection" value={form.enCollection} onChange={(e) => setForm({ ...form, enCollection: e.target.value })} style={inputStyle} />
-              <textarea placeholder="Summary content" value={form.enContent} onChange={(e) => setForm({ ...form, enContent: e.target.value })} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
-              <textarea placeholder="Detail content" value={form.enDetailContent} onChange={(e) => setForm({ ...form, enDetailContent: e.target.value })} rows={6} style={{ ...inputStyle, resize: "vertical" }} />
-            </div>
+          {/* English Toggle & Sync */}
+          <div className="flex gap-3" style={{ paddingTop: "8px" }}>
+            <button
+              onClick={syncEnglish}
+              style={{
+                fontSize: "11px",
+                fontFamily: "'Space Mono', monospace",
+                color: "var(--text-charcoal)",
+                background: "rgba(46, 204, 113, 0.08)",
+                border: "1px solid rgba(46, 204, 113, 0.3)",
+                padding: "6px 14px",
+                cursor: "pointer",
+                borderRadius: "2px",
+              }}
+            >
+              {s.syncEnglish}
+            </button>
+            <button
+              onClick={() => setShowEnglish(!showEnglish)}
+              style={{
+                fontSize: "11px",
+                fontFamily: "'Space Mono', monospace",
+                color: "var(--text-grey)",
+                background: "transparent",
+                border: "1px solid var(--border-light)",
+                padding: "6px 14px",
+                cursor: "pointer",
+                borderRadius: "2px",
+              }}
+            >
+              {showEnglish ? s.hideEnglish : s.showEnglish}
+            </button>
           </div>
+
+          {/* English Content (Collapsible) */}
+          {showEnglish && (
+            <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "16px" }}>
+              <h3 style={{ fontSize: "12px", color: "var(--text-grey)", marginBottom: "12px" }}>{s.enContentLabel}</h3>
+              <div className="space-y-3">
+                <input placeholder={s.titlePlaceholder} value={form.enTitle} onChange={(e) => setForm({ ...form, enTitle: e.target.value })} style={inputStyle} />
+                <input placeholder={s.subtitlePlaceholder} value={form.enSubtitle} onChange={(e) => setForm({ ...form, enSubtitle: e.target.value })} style={inputStyle} />
+                <input placeholder={s.collectionPlaceholder} value={form.enCollection} onChange={(e) => setForm({ ...form, enCollection: e.target.value })} style={inputStyle} />
+                <textarea placeholder={s.summaryPlaceholder} value={form.enContent} onChange={(e) => setForm({ ...form, enContent: e.target.value })} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+                <textarea placeholder={s.detailPlaceholder} value={form.enDetailContent} onChange={(e) => setForm({ ...form, enDetailContent: e.target.value })} rows={6} style={{ ...inputStyle, resize: "vertical" }} />
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleSubmit}

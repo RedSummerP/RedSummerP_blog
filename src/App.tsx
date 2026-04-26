@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Routes, Route } from "react-router";
 import LeftColumn from "./components/LeftColumn";
+import MiddleColumn from "./components/MiddleColumn";
 import RightColumn from "./components/RightColumn";
 import PostDetail from "./components/PostDetail";
 import ContactModal from "./components/ContactModal";
@@ -155,14 +156,14 @@ function ToggleBar({ onSettingsClick }: { onSettingsClick?: () => void }) {
 function HomePage() {
   const [showContact, setShowContact] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const { isAuthenticated } = useAuth();
-  const { language } = useLanguage();
-  const navigate = useNavigate();
-  const { data: bio } = trpc.profile.get.useQuery();
-
-  const welcomeText = language === "zh"
-    ? (bio?.zhText || "欢迎来到我的个人空间。这里记录着我的思考、创作与探索。")
-    : (bio?.enText || "Welcome to my personal space. A collection of thoughts, creations, and explorations.");
+  const { isAdmin } = useAuth();
+  const { data: publicPosts } = trpc.blog.list.useQuery();
+  const { data: adminPosts } = trpc.blog.listAdmin.useQuery(undefined, { enabled: isAdmin });
+  const dbPosts = isAdmin ? adminPosts : publicPosts;
+  const isLoading = isAdmin
+    ? (adminPosts === undefined)
+    : (publicPosts === undefined);
+  const posts: BlogPost[] = dbPosts ? dbPosts.map(toBlogPost) : [];
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--bg-warm-white)" }}>
@@ -175,33 +176,13 @@ function HomePage() {
 
       <div className="flex" style={{ paddingTop: "40px", height: "100vh" }}>
         <LeftColumn onContactClick={() => setShowContact(true)} />
-        <main className="flex-1 overflow-y-auto" style={{ borderRight: "1px solid var(--border-light)", height: "100vh" }}>
-          <div className="p-6 pb-24" style={{ maxWidth: "600px", margin: "0 auto" }}>
-            <h2 style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-grey)", marginBottom: "32px" }}>
-              {language === "zh" ? "关于" : "ABOUT"}
-            </h2>
-            <p style={{ fontSize: "13px", lineHeight: 1.8, color: "var(--text-charcoal)", whiteSpace: "pre-line", marginBottom: "32px" }}>
-              {welcomeText}
-            </p>
-            {isAuthenticated && (
-              <button
-                onClick={() => navigate("/profile")}
-                style={{
-                  fontSize: "12px",
-                  fontFamily: "'Space Mono', monospace",
-                  color: "var(--bg-warm-white)",
-                  background: "var(--text-charcoal)",
-                  border: "none",
-                  padding: "10px 20px",
-                  cursor: "pointer",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {language === "zh" ? "查看我的文章 →" : "VIEW MY ARTICLES →"}
-              </button>
-            )}
-          </div>
-        </main>
+        {isLoading ? (
+          <main className="flex-1 flex items-center justify-center" style={{ borderRight: "1px solid var(--border-light)" }}>
+            <p style={{ fontSize: "12px", color: "var(--text-grey)", fontFamily: "'Space Mono', monospace" }}>LOADING...</p>
+          </main>
+        ) : (
+          <MiddleColumn posts={posts} />
+        )}
         <RightColumn />
       </div>
 
