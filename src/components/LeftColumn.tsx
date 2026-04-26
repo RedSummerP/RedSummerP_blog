@@ -15,7 +15,7 @@ const fallbackText = {
 
 export default function LeftColumn({ onContactClick }: LeftColumnProps) {
   const { language } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
 
   const { data: bio } = trpc.profile.get.useQuery();
@@ -99,7 +99,7 @@ export default function LeftColumn({ onContactClick }: LeftColumnProps) {
             >
               PROFILE (LINKS)
             </h2>
-            {isAdmin && !isEditing && (
+            {isAuthenticated && !isEditing && (
               <button
                 onClick={startEdit}
                 style={{

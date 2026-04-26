@@ -1,4 +1,4 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNotNull } from "drizzle-orm";
 import { getDb } from "./connection";
 import { posts } from "@db/schema";
 import type { InsertPost } from "@db/schema";
@@ -14,7 +14,7 @@ export async function findPublicPosts() {
   return getDb()
     .select()
     .from(posts)
-    .where(eq(posts.isPublic, true))
+    .where(and(eq(posts.isPublic, true), isNotNull(posts.userId)))
     .orderBy(asc(posts.sortOrder));
 }
 

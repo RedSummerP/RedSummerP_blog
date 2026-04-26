@@ -56,7 +56,7 @@ const fallbackCvData: Record<string, CVItem[]> = {
 
 export default function RightColumn() {
   const { language } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { isAuthenticated } = useAuth();
   const artFrameRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const utils = trpc.useUtils();
@@ -152,7 +152,7 @@ export default function RightColumn() {
           <h2 style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-grey)", marginBottom: "48px", lineHeight: 1.4 }}>
             SKILLS & PROJECTS
           </h2>
-          {isAdmin && (
+          {isAuthenticated && (
             <button onClick={startAdd} style={{ fontSize: "10px", color: "var(--text-grey)", background: "none", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace", marginBottom: "48px" }}>
               + ADD
             </button>
@@ -210,7 +210,7 @@ export default function RightColumn() {
                     <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--text-charcoal)", whiteSpace: "pre-line" }}>{item.title}</p>
                     {item.subtitle && <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--text-grey)", whiteSpace: "pre-line" }}>{item.subtitle}</p>}
                     <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--text-charcoal)" }}>{item.year}</p>
-                    {isAdmin && useDb && (
+                    {isAuthenticated && useDb && (
                       <div className="flex gap-2 mt-1">
                         <button onClick={() => startEdit(item)} style={{ fontSize: "9px", color: "var(--text-grey)", background: "none", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace" }}>EDIT</button>
                         <button onClick={() => { if (confirm("Delete?")) deleteCv.mutate({ id: item.id }); }} style={{ fontSize: "9px", color: "#E74C3C", background: "none", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace" }}>DEL</button>

@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getProfileBio, upsertProfileBio } from "./queries/profile-bio";
 
 export const profileRouter = createRouter({
   get: publicQuery.query(async () => getProfileBio()),
 
-  update: adminQuery
+  update: authedQuery
     .input(
       z.object({
         zhText: z.string().optional(),
