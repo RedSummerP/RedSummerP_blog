@@ -44,7 +44,7 @@ export default function Profile() {
       articleCount: "文章数",
       memberSince: "加入于",
       loading: "加载中...",
-      empty: "还没有文章，点击"写文章"开始创作吧",
+      empty: `还没有文章，点击"写文章"开始创作吧`,
       edit: "编辑",
       delete: "删除",
       view: "查看",
