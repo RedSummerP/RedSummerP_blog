@@ -16,10 +16,10 @@ app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
 app.post("/api/upload", async (c) => {
   try {
-    const body = await c.req.parseBody({ all: false });
-    const file = body.file as File | undefined;
+    const formData = await c.req.formData();
+    const file = formData.get("file");
 
-    if (!file || !(file instanceof File)) {
+    if (!file || typeof file === "string") {
       return c.json({ error: "No file provided" }, 400);
     }
 

@@ -82,7 +82,6 @@ export default function Login() {
       submitting: "处理中...",
       switchToRegister: "没有账户？点击注册",
       switchToLogin: "已有账户？点击登入",
-      hint: "默认账户：admin / 123456",
     },
     en: {
       loginTitle: "Admin Login",
@@ -96,7 +95,6 @@ export default function Login() {
       submitting: "Processing...",
       switchToRegister: "No account? Register here",
       switchToLogin: "Have an account? Log in",
-      hint: "Default: admin / 123456",
     },
   };
   const s = t[language];
@@ -290,19 +288,7 @@ export default function Login() {
           {isRegister ? s.switchToLogin : s.switchToRegister}
         </button>
 
-        {!isRegister && (
-          <p
-            style={{
-              fontSize: "11px",
-              color: "var(--text-grey)",
-              marginTop: "12px",
-              textAlign: "center",
-              fontFamily: "'Space Mono', monospace",
-            }}
-          >
-            {s.hint}
-          </p>
-        )}
+
       </div>
     </div>
   );

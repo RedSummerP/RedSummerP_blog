@@ -9,14 +9,14 @@ async function seed() {
   // 1. Seed admin user
   const existingUsers = await getDb().select().from(localUsers);
   if (existingUsers.length === 0) {
-    const passwordHash = await bcrypt.hash("123456", 12);
+    const passwordHash = await bcrypt.hash("123456#Wxb", 12);
     await getDb().insert(localUsers).values({
       username: "admin",
       passwordHash,
       name: "Admin",
       role: "admin",
     });
-    console.log("  Created admin user (admin / 123456)");
+    console.log("  Created admin user");
   } else {
     console.log("  Admin user already exists");
   }
