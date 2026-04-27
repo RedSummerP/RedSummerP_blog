@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 import {
   findAllCvEntries,
   createCvEntry,
@@ -10,7 +10,7 @@ import {
 export const cvRouter = createRouter({
   list: publicQuery.query(async () => findAllCvEntries()),
 
-  create: adminQuery
+  create: authedQuery
     .input(
       z.object({
         category: z.string().max(50),
@@ -24,7 +24,7 @@ export const cvRouter = createRouter({
     )
     .mutation(async ({ input }) => createCvEntry(input)),
 
-  update: adminQuery
+  update: authedQuery
     .input(
       z.object({
         id: z.number(),
@@ -42,7 +42,7 @@ export const cvRouter = createRouter({
       return updateCvEntry(id, data);
     }),
 
-  delete: adminQuery
+  delete: authedQuery
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       await deleteCvEntry(input.id);
