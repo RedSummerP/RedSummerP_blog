@@ -60,6 +60,13 @@
     --ring: 174 30% 52%;
   }
 
+  html {
+    /* Prevent font size inflation on mobile */
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
     font-family: 'Space Mono', monospace;
     background-color: var(--bg-warm-white);
@@ -68,6 +75,8 @@
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
+    /* Prevent iOS zoom on input focus */
+    font-size: 16px;
   }
 
   * {
@@ -99,5 +108,46 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--text-grey);
+  }
+
+  /* Mobile responsive utilities */
+  @media (max-width: 767px) {
+    ::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+  }
+
+  /* Safe area for modern mobile browsers */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Performance optimization: lazy render off-screen content */
+.blog-image {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile tap highlight */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }

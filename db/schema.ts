@@ -94,6 +94,7 @@ export const profileBio = mysqlTable("profileBio", {
   enText: text("enText").notNull(),
   email: varchar("email", { length: 320 }),
   instagram: varchar("instagram", { length: 500 }),
+  badges: text("badges"),
   updatedAt: timestamp("updatedAt")
     .defaultNow()
     .notNull()

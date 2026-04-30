@@ -14,6 +14,13 @@ import {
 export const blogRouter = createRouter({
   list: publicQuery.query(async () => findPublicPosts()),
 
+  latestUpdate: publicQuery.query(async () => {
+    const posts = await findPublicPosts();
+    if (posts.length === 0) return null;
+    const dates = posts.map(p => new Date(p.updatedAt).getTime());
+    return new Date(Math.max(...dates)).toISOString();
+  }),
+
   listAdmin: adminQuery.query(async () => findAllPosts()),
 
   listMine: authedQuery.query(async ({ ctx }) => {

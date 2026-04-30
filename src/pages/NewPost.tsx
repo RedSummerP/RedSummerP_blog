@@ -33,15 +33,44 @@ export default function NewPost() {
     return null;
   }
 
-  const syncEnglish = () => {
-    setForm((prev) => ({
-      ...prev,
-      enTitle: prev.enTitle || prev.zhTitle,
-      enSubtitle: prev.enSubtitle || prev.zhSubtitle,
-      enCollection: prev.enCollection || prev.zhCollection,
-      enContent: prev.enContent || prev.zhContent,
-      enDetailContent: prev.enDetailContent || prev.zhDetailContent,
-    }));
+  const [translating, setTranslating] = useState(false);
+
+  const translateField = async (zhText: string): Promise<string> => {
+    if (!zhText.trim()) return "";
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: zhText }),
+      });
+      const data = await res.json();
+      return data.translated || zhText;
+    } catch {
+      return zhText;
+    }
+  };
+
+  const syncEnglish = async () => {
+    setTranslating(true);
+    try {
+      const [enTitle, enSubtitle, enCollection, enContent, enDetailContent] = await Promise.all([
+        form.enTitle || translateField(form.zhTitle),
+        form.enSubtitle || translateField(form.zhSubtitle),
+        form.enCollection || translateField(form.zhCollection),
+        form.enContent || translateField(form.zhContent),
+        form.enDetailContent || translateField(form.zhDetailContent),
+      ]);
+      setForm((prev) => ({
+        ...prev,
+        enTitle: prev.enTitle || enTitle,
+        enSubtitle: prev.enSubtitle || enSubtitle,
+        enCollection: prev.enCollection || enCollection,
+        enContent: prev.enContent || enContent,
+        enDetailContent: prev.enDetailContent || enDetailContent,
+      }));
+    } finally {
+      setTranslating(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -181,18 +210,19 @@ export default function NewPost() {
           <div className="flex gap-3" style={{ paddingTop: "8px" }}>
             <button
               onClick={syncEnglish}
+              disabled={translating}
               style={{
                 fontSize: "11px",
                 fontFamily: "'Space Mono', monospace",
-                color: "var(--text-charcoal)",
-                background: "rgba(46, 204, 113, 0.08)",
-                border: "1px solid rgba(46, 204, 113, 0.3)",
+                color: translating ? "var(--text-grey)" : "var(--text-charcoal)",
+                background: translating ? "transparent" : "rgba(46, 204, 113, 0.08)",
+                border: `1px solid ${translating ? "var(--border-light)" : "rgba(46, 204, 113, 0.3)"}`,
                 padding: "6px 14px",
-                cursor: "pointer",
+                cursor: translating ? "wait" : "pointer",
                 borderRadius: "2px",
               }}
             >
-              {s.syncEnglish}
+              {translating ? "TRANSLATING..." : s.syncEnglish}
             </button>
             <button
               onClick={() => setShowEnglish(!showEnglish)}

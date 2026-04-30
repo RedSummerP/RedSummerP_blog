@@ -4,8 +4,10 @@ import gsap from "gsap";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { trpc } from "@/providers/trpc";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { BlogPost } from "../../contracts/blog";
 import ImageUpload from "./ImageUpload";
+import MarkdownRenderer from "./MarkdownRenderer";
 
 interface PostDetailProps {
   posts: BlogPost[];
@@ -19,6 +21,7 @@ export default function PostDetail({ posts }: PostDetailProps) {
   const { language } = useLanguage();
   const { isAdmin } = useAuth();
   const utils = trpc.useUtils();
+  const isMobile = useIsMobile();
 
   const isEditMode = searchParams.get("mode") === "edit" && isAdmin;
 
@@ -86,10 +89,13 @@ export default function PostDetail({ posts }: PostDetailProps) {
     letterSpacing: "0.05em",
   };
 
+  const headerPad = isMobile ? "0 12px" : "0 24px";
+  const contentPad = isMobile ? "16px" : "24px";
+
   if (!post) {
     return (
       <div className="flex items-center justify-center" style={{ height: "100vh", backgroundColor: "var(--bg-warm-white)" }}>
-        <div className="text-center">
+        <div className="text-center" style={{ padding: "0 24px" }}>
           <p style={{ fontSize: "14px", color: "var(--text-grey)" }}>{notFoundText}</p>
           <button onClick={() => navigate("/")} style={{ marginTop: "16px", fontSize: "12px", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}>
             {backText}
@@ -103,7 +109,7 @@ export default function PostDetail({ posts }: PostDetailProps) {
   if (isEditMode) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "#1A1A1A" }}>
-        <header className="fixed top-0 left-0 right-0 flex items-center justify-between px-6" style={{ height: "40px", zIndex: 50, backgroundColor: "#1A1A1A", borderBottom: "1px solid #333" }}>
+        <header className="fixed top-0 left-0 right-0 flex items-center justify-between" style={{ height: "40px", zIndex: 50, backgroundColor: "#1A1A1A", borderBottom: "1px solid #333", padding: headerPad }}>
           <button onClick={() => navigate("/")} style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "#FFFFFF", background: "none", border: "none", cursor: "pointer" }}>
             CREATOR'S LOG
           </button>
@@ -117,7 +123,7 @@ export default function PostDetail({ posts }: PostDetailProps) {
           </div>
         </header>
 
-        <div className="mx-auto" style={{ maxWidth: "720px", padding: "80px 24px 80px" }}>
+        <div className="mx-auto" style={{ maxWidth: "720px", padding: isMobile ? "56px 12px 40px" : "80px 24px 80px" }}>
           <div className="flex items-center justify-between mb-8">
             <h1 style={{ fontSize: "16px", fontWeight: 400, color: "#FFFFFF", letterSpacing: "0.05em" }}>{editThisText}</h1>
           </div>
@@ -165,14 +171,18 @@ export default function PostDetail({ posts }: PostDetailProps) {
               </div>
             </div>
 
+            <div className="flex gap-3" style={{ paddingTop: "8px" }}>
+              <TranslateButton2 zhFields={editForm} onTranslated={(fields) => setEditForm({ ...editForm, ...fields })} />
+            </div>
+
             <div style={{ borderTop: "1px solid #333", paddingTop: "20px" }}>
-              <h3 style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", marginBottom: "16px", letterSpacing: "0.05em", fontFamily: "'Space Mono', monospace" }}>English Content</h3>
+              <h3 style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", marginBottom: "16px", letterSpacing: "0.05em", fontFamily: "'Space Mono', monospace" }}>EN Content</h3>
               <div className="space-y-4">
                 <div><label style={labelStyle}>Title</label><input type="text" value={editForm.enTitle} onChange={(e) => setEditForm({ ...editForm, enTitle: e.target.value })} style={inputBase} /></div>
                 <div><label style={labelStyle}>Subtitle</label><input type="text" value={editForm.enSubtitle} onChange={(e) => setEditForm({ ...editForm, enSubtitle: e.target.value })} style={inputBase} /></div>
                 <div><label style={labelStyle}>Collection</label><input type="text" value={editForm.enCollection} onChange={(e) => setEditForm({ ...editForm, enCollection: e.target.value })} style={inputBase} /></div>
                 <div><label style={labelStyle}>Summary</label><textarea value={editForm.enContent} onChange={(e) => setEditForm({ ...editForm, enContent: e.target.value })} rows={3} style={{ ...inputBase, resize: "vertical" }} /></div>
-                <div><label style={labelStyle}>Detail Content</label><textarea value={editForm.enDetailContent} onChange={(e) => setEditForm({ ...editForm, enDetailContent: e.target.value })} rows={8} style={{ ...inputBase, resize: "vertical" }} /></div>
+                <div><label style={labelStyle}>Detail</label><textarea value={editForm.enDetailContent} onChange={(e) => setEditForm({ ...editForm, enDetailContent: e.target.value })} rows={8} style={{ ...inputBase, resize: "vertical" }} /></div>
               </div>
             </div>
 
@@ -199,11 +209,10 @@ export default function PostDetail({ posts }: PostDetailProps) {
 
   // VIEW MODE
   const content = post[language];
-  const paragraphs = content.detailContent.split("\n\n");
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--bg-warm-white)" }}>
-      <header className="fixed top-0 left-0 right-0 flex items-center justify-between px-6" style={{ height: "40px", zIndex: 50, backgroundColor: "var(--bg-warm-white)", borderBottom: "1px solid var(--border-light)" }}>
+      <header className="fixed top-0 left-0 right-0 flex items-center justify-between" style={{ height: "40px", zIndex: 50, backgroundColor: "var(--bg-warm-white)", borderBottom: "1px solid var(--border-light)", padding: headerPad }}>
         <button onClick={() => navigate("/")} style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-charcoal)", background: "none", border: "none", cursor: "pointer" }}>
           CREATOR'S LOG
         </button>
@@ -219,8 +228,8 @@ export default function PostDetail({ posts }: PostDetailProps) {
         </div>
       </header>
 
-      <div ref={contentRef} className="mx-auto" style={{ maxWidth: "680px", padding: "80px 24px 80px" }}>
-        <div className="mb-8" style={{ border: "1px solid var(--border-light)" }}>
+      <div ref={contentRef} className="mx-auto" style={{ maxWidth: "680px", padding: isMobile ? "56px 16px 60px" : "80px 24px 80px" }}>
+        <div className="mb-6 md:mb-8" style={{ border: "1px solid var(--border-light)" }}>
           <img src={post.image} alt={content.title} className="w-full h-auto block" loading="eager" />
         </div>
 
@@ -245,15 +254,13 @@ export default function PostDetail({ posts }: PostDetailProps) {
           )}
         </div>
 
-        <h1 style={{ fontSize: "22px", fontWeight: 400, lineHeight: 1.3, color: "var(--text-charcoal)", marginBottom: "6px" }}>{content.title}</h1>
+        <h1 style={{ fontSize: isMobile ? "18px" : "22px", fontWeight: 400, lineHeight: 1.3, color: "var(--text-charcoal)", marginBottom: "6px" }}>{content.title}</h1>
         <p style={{ fontSize: "13px", color: "var(--text-grey)", lineHeight: 1.5, marginBottom: "32px" }}>{content.subtitle}</p>
 
         <div style={{ borderTop: "1px solid var(--border-light)", marginBottom: "32px" }} />
 
-        <div className="space-y-5">
-          {paragraphs.map((para, idx) => (
-            <p key={idx} style={{ fontSize: "13px", lineHeight: 1.8, color: "var(--text-charcoal)", whiteSpace: "pre-line" }}>{para}</p>
-          ))}
+        <div>
+          <MarkdownRenderer content={content.detailContent} />
         </div>
 
         <div style={{ borderTop: "1px solid var(--border-light)", marginTop: "48px", paddingTop: "24px" }}>
@@ -263,5 +270,69 @@ export default function PostDetail({ posts }: PostDetailProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Mini translate button for PostDetail edit mode */
+function TranslateButton2({ zhFields, onTranslated }: {
+  zhFields: {
+    zhTitle: string; zhSubtitle: string; zhCollection: string;
+    zhContent: string; zhDetailContent: string;
+  };
+  onTranslated: (fields: {
+    enTitle: string; enSubtitle: string; enCollection: string;
+    enContent: string; enDetailContent: string;
+  }) => void;
+}) {
+  const [translating, setTranslating] = useState(false);
+
+  const translateField = async (text: string): Promise<string> => {
+    if (!text.trim()) return "";
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      return data.translated || text;
+    } catch {
+      return text;
+    }
+  };
+
+  const handleTranslate = async () => {
+    setTranslating(true);
+    try {
+      const [enTitle, enSubtitle, enCollection, enContent, enDetailContent] = await Promise.all([
+        translateField(zhFields.zhTitle),
+        translateField(zhFields.zhSubtitle),
+        translateField(zhFields.zhCollection),
+        translateField(zhFields.zhContent),
+        translateField(zhFields.zhDetailContent),
+      ]);
+      onTranslated({ enTitle, enSubtitle, enCollection, enContent, enDetailContent });
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleTranslate}
+      disabled={translating}
+      style={{
+        fontSize: "11px",
+        fontFamily: "'Space Mono', monospace",
+        color: translating ? "rgba(255,255,255,0.4)" : "#FFFFFF",
+        background: translating ? "transparent" : "rgba(46, 204, 113, 0.15)",
+        border: `1px solid ${translating ? "rgba(255,255,255,0.2)" : "rgba(46, 204, 113, 0.4)"}`,
+        padding: "6px 14px",
+        cursor: translating ? "wait" : "pointer",
+        borderRadius: "2px",
+      }}
+    >
+      {translating ? "TRANSLATING..." : "🌐 Translate to English"}
+    </button>
   );
 }

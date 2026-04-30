@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ShaderCanvas from "./ShaderCanvas";
+import CodeRain from "./CodeRain";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { trpc } from "@/providers/trpc";
@@ -78,7 +78,7 @@ export default function LeftColumn({ onContactClick }: LeftColumnProps) {
         position: "relative",
       }}
     >
-      <ShaderCanvas />
+      <CodeRain />
 
       <div
         className="relative z-10 flex flex-col h-full p-6"

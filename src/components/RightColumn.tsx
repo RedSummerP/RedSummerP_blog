@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { trpc } from "@/providers/trpc";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ImageUpload from "./ImageUpload";
+import type { Badge } from "./BadgeEditor";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,11 +34,13 @@ const fallbackCvData: Record<string, CVItem[]> = {
 export default function RightColumn() {
   const { language } = useLanguage();
   const { isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
   const artFrameRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const utils = trpc.useUtils();
 
   const { data: cvDataDb } = trpc.cv.list.useQuery();
+  const { data: latestDate } = trpc.blog.latestUpdate.useQuery();
   const createCv = trpc.cv.create.useMutation({ onSuccess: () => utils.cv.list.invalidate() });
   const updateCv = trpc.cv.update.useMutation({ onSuccess: () => utils.cv.list.invalidate() });
   const deleteCv = trpc.cv.delete.useMutation({ onSuccess: () => utils.cv.list.invalidate() });
@@ -45,8 +50,28 @@ export default function RightColumn() {
   const [isAdding, setIsAdding] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
+  // Only run GSAP parallax on desktop
   useEffect(() => {
-    if (!artFrameRef.current || !imageRef.current) return;
+    if (isMobile || !artFrameRef.current || !imageRef.current) return;
+    const tween = gsap.to(imageRef.current, {
+      y: -40,
+      ease: "none",
+      scrollTrigger: {
+        trigger: artFrameRef.current,
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true,
+      },
+    });
+    return () => {
+      if (tween.scrollTrigger) tween.scrollTrigger.kill();
+      tween.kill();
+    };
+  }, [isMobile]);
+
+  // Re-run parallax when avatar URL changes (on desktop only)
+  useEffect(() => {
+    if (isMobile || !artFrameRef.current || !imageRef.current) return;
     const tween = gsap.to(imageRef.current, {
       y: -40,
       ease: "none",
@@ -118,10 +143,21 @@ export default function RightColumn() {
     setEditingId(null);
   };
 
+  const containerStyle: React.CSSProperties = isMobile
+    ? { overflowY: "visible" }
+    : { overflowY: "auto" };
+
   return (
-    <aside className="sticky top-0 h-screen overflow-y-auto" style={{ width: "25%", minWidth: "280px" }}>
-      <div className="p-6 pb-24">
-        <AvatarSection />
+    <aside
+      className={isMobile ? "" : "sticky top-0 h-screen"}
+      style={{
+        width: isMobile ? "100%" : "25%",
+        minWidth: isMobile ? "auto" : "280px",
+        ...containerStyle,
+      }}
+    >
+      <div className={isMobile ? "p-4 pb-8" : "p-6 pb-24"}>
+        <AvatarSection isMobile={isMobile} />
 
         {/* Skills & Projects Header */}
         <div className="flex items-center justify-between" style={{ marginBottom: "24px" }}>
@@ -166,7 +202,6 @@ export default function RightColumn() {
           </div>
         )}
 
-        {/* Add button (only in edit mode) */}
         {editMode && !isAdding && editingId === null && (
           <button
             onClick={startAdd}
@@ -191,7 +226,6 @@ export default function RightColumn() {
                     {item.subtitle && <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--text-grey)", whiteSpace: "pre-line" }}>{item.subtitle}</p>}
                     <p style={{ fontSize: "12px", lineHeight: 1.6, color: "var(--text-charcoal)" }}>{item.year}</p>
 
-                    {/* Edit mode actions */}
                     {editMode && useDb && (
                       <div className="flex gap-2 mt-1">
                         <button onClick={() => startEdit(item)} style={{ fontSize: "9px", color: "var(--text-grey)", background: "none", border: "none", cursor: "pointer", fontFamily: "'Space Mono', monospace" }}>EDIT</button>
@@ -205,28 +239,53 @@ export default function RightColumn() {
           );
         })}
 
-        <p style={{ fontSize: "11px", color: "var(--text-grey)", marginTop: "32px" }}>Last Updated 2024</p>
+        <p style={{ fontSize: "11px", color: "var(--text-grey)", marginTop: "32px" }}>
+          {latestDate
+            ? "Last Updated " + new Date(latestDate).toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })
+            : "Last Updated 2024"}
+        </p>
       </div>
     </aside>
   );
 }
 
-function AvatarSection() {
+interface AvatarSectionProps {
+  isMobile: boolean;
+}
+
+function AvatarSection({ isMobile }: AvatarSectionProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const utils = trpc.useUtils();
   const artFrameRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [editingAvatar, setEditingAvatar] = useState(false);
 
   const { data: settings } = trpc.settings.get.useQuery();
+  const { data: profileData } = trpc.profile.get.useQuery();
   const updateSettings = trpc.settings.update.useMutation({
     onSuccess: () => utils.settings.get.invalidate(),
+  });
+  const updateBio = trpc.profile.update.useMutation({
+    onSuccess: () => utils.profile.get.invalidate(),
   });
 
   const avatarUrl = settings?.avatarImage || "/images/portrait.jpg";
 
+  // Badges
+  let badges: Badge[] = [];
+  try { if (profileData?.badges && typeof profileData.badges === "string") { const p = JSON.parse(profileData.badges); if (Array.isArray(p)) badges = p; } } catch {}
+
+  const moveBadge = (from: number, to: number) => {
+    const b = [...badges];
+    const [moved] = b.splice(from, 1);
+    b.splice(to, 0, moved);
+    updateBio.mutate({ badges: JSON.stringify(b) });
+  };
+
+  // Only run GSAP parallax on desktop
   useEffect(() => {
-    if (!artFrameRef.current || !imageRef.current) return;
+    if (isMobile || !artFrameRef.current || !imageRef.current) return;
     const tween = gsap.to(imageRef.current, {
       y: -40,
       ease: "none",
@@ -241,12 +300,30 @@ function AvatarSection() {
       if (tween.scrollTrigger) tween.scrollTrigger.kill();
       tween.kill();
     };
-  }, [avatarUrl]);
+  }, [avatarUrl, isMobile]);
 
   return (
     <div className="mb-10">
-      <div ref={artFrameRef} style={{ border: "1px solid var(--border-light)", boxShadow: "0px 4px 15px rgba(0,0,0,0.08)", overflow: "hidden", aspectRatio: "1 / 1", width: "100%" }}>
-        <img ref={imageRef} src={avatarUrl} alt="Portrait" className="block" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+      <div
+        ref={artFrameRef}
+        style={{
+          border: "1px solid var(--border-light)",
+          boxShadow: "0px 4px 15px rgba(0,0,0,0.08)",
+          overflow: "hidden",
+          aspectRatio: "1 / 1",
+          width: isMobile ? "50%" : "100%",
+          maxWidth: isMobile ? "200px" : "none",
+          margin: isMobile ? "0 auto 16px" : "0",
+        }}
+      >
+        <img
+          ref={imageRef}
+          src={avatarUrl}
+          alt="Portrait"
+          className="block"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          loading="lazy"
+        />
       </div>
       {isAuthenticated && (
         <div className="mt-2">
@@ -276,6 +353,44 @@ function AvatarSection() {
               EDIT AVATAR
             </button>
           )}
+        </div>
+      )}
+
+      {/* Badges under avatar */}
+      {badges.length > 0 && (
+        <div className="mt-4" style={{ borderTop: "1px solid var(--border-light)", paddingTop: "14px" }}>
+          <p style={{ fontSize: "10px", color: "var(--text-grey)", fontFamily: "'Space Mono', monospace", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px" }}>ACHIEVEMENTS</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {badges.map((badge, idx) => (
+              <div key={idx} style={{ position: "relative", textAlign: "center", width: "62px" }}
+                onMouseEnter={(e) => { const t = e.currentTarget.querySelector(".btip") as HTMLElement; if (t) t.style.display = "block"; }}
+                onMouseLeave={(e) => { const t = e.currentTarget.querySelector(".btip") as HTMLElement; if (t) t.style.display = "none"; }}
+              >
+                <div style={{ width: "38px", height: "38px", margin: "0 auto 2px", borderRadius: "4px", overflow: "hidden", border: "1px solid var(--border-light)", background: "var(--bg-warm-white)" }}>
+                  {badge.icon ? (
+                    <img src={badge.icon} alt={badge.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", opacity: 0.3 }}>🏆</div>
+                  )}
+                </div>
+                <p style={{ fontSize: "8px", color: "var(--text-grey)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{badge.name}</p>
+                <div className="btip" style={{ display: "none", position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.85)", color: "#fff", padding: "4px 8px", borderRadius: "3px", fontSize: "9px", whiteSpace: "nowrap", zIndex: 10, marginBottom: "4px" }}>
+                  <strong>{badge.name}</strong><br />{badge.description}
+                </div>
+                {/* Reorder arrows for admin */}
+                {isAuthenticated && (
+                  <div style={{ position: "absolute", top: "-6px", right: "-2px", display: "flex", gap: "1px" }}>
+                    {idx > 0 && (
+                      <button onClick={() => { const b = [...badges]; const [m] = b.splice(idx, 1); b.splice(idx-1, 0, m); updateBio.mutate({ badges: JSON.stringify(b) }); }} style={{ fontSize: "7px", color: "var(--text-grey)", background: "var(--bg-warm-white)", border: "1px solid var(--border-light)", borderRadius: "2px", cursor: "pointer", padding: "0 2px", lineHeight: "12px" }}>▲</button>
+                    )}
+                    {idx < badges.length - 1 && (
+                      <button onClick={() => { const b = [...badges]; const [m] = b.splice(idx, 1); b.splice(idx+1, 0, m); updateBio.mutate({ badges: JSON.stringify(b) }); }} style={{ fontSize: "7px", color: "var(--text-grey)", background: "var(--bg-warm-white)", border: "1px solid var(--border-light)", borderRadius: "2px", cursor: "pointer", padding: "0 2px", lineHeight: "12px" }}>▼</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

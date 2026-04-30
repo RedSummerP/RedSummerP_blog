@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { trpc } from "@/providers/trpc";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { BlogPost } from "../../contracts/blog";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -20,13 +21,18 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
   const { language } = useLanguage();
   const { isAdmin } = useAuth();
   const utils = trpc.useUtils();
+  const isMobile = useIsMobile();
+  const animInitialized = useRef(false);
 
   const deletePost = trpc.blog.delete.useMutation({
     onSuccess: () => { utils.blog.list.invalidate(); },
   });
 
   useEffect(() => {
-    if (!columnRef.current) return;
+    // Skip GSAP animations on mobile for performance
+    if (isMobile || animInitialized.current || !columnRef.current) return;
+    animInitialized.current = true;
+
     const images = columnRef.current.querySelectorAll(".blog-image");
     const triggers: ScrollTrigger[] = [];
     images.forEach((img) => {
@@ -37,14 +43,23 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
       });
       if (tween.scrollTrigger) triggers.push(tween.scrollTrigger);
     });
-    return () => { triggers.forEach((t) => t.kill()); };
-  }, [posts]);
+    return () => { triggers.forEach((t) => t.kill()); animInitialized.current = false; };
+  }, [posts, isMobile]);
 
   const sectionTitle = "MATERIAL (THOUGHTS)";
 
   return (
-    <main ref={columnRef} className="flex-1 overflow-y-auto" style={{ borderRight: "1px solid var(--border-light)", height: "100vh", scrollBehavior: "smooth" }}>
-      <div className="p-6 pb-24">
+    <main
+      ref={columnRef}
+      className={`flex-1 ${isMobile ? '' : 'overflow-y-auto'}`}
+      style={{
+        borderRight: isMobile ? "none" : "1px solid var(--border-light)",
+        height: isMobile ? "auto" : "100dvh",
+        scrollBehavior: "smooth",
+        overflowY: isMobile ? "visible" : "auto",
+      }}
+    >
+      <div className={`${isMobile ? 'p-4' : 'p-6'} pb-24`}>
         <div className="flex items-center justify-between">
           <h2 style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-grey)", marginBottom: "32px", lineHeight: 1.4 }}>
             {sectionTitle}
@@ -68,11 +83,11 @@ export default function MiddleColumn({ posts }: MiddleColumnProps) {
                       onMouseLeave={() => setHoveredImage(null)}
                     >
                       <img src={post.image} alt={content.title} className="w-full h-auto block transition-all duration-300"
-                        style={{ filter: hoveredImage === post.id ? "grayscale(100%) brightness(0.9)" : "none", transform: hoveredImage === post.id ? "scale(1.02)" : "scale(1)" }}
+                        style={{ filter: !isMobile && hoveredImage === post.id ? "grayscale(100%) brightness(0.9)" : "none", transform: !isMobile && hoveredImage === post.id ? "scale(1.02)" : "scale(1)" }}
                         loading="lazy"
                       />
                     </div>
-                    <h3 style={{ fontSize: "15px", fontWeight: 400, lineHeight: 1.4, color: "var(--text-charcoal)", marginBottom: "2px" }}>{content.title}</h3>
+                    <h3 style={{ fontSize: isMobile ? "14px" : "15px", fontWeight: 400, lineHeight: 1.4, color: "var(--text-charcoal)", marginBottom: "2px" }}>{content.title}</h3>
                     <p style={{ fontSize: "12px", color: "var(--text-grey)", lineHeight: 1.5, marginBottom: "4px" }}>{content.subtitle}</p>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: "11px", color: "var(--text-grey)" }}>{post.year}</span>

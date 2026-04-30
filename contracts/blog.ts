@@ -26,7 +26,7 @@ export function toBlogPost(post: Post): BlogPost {
     id: post.id,
     year: post.year,
     image: post.image,
-    isPublic: post.isPublic ?? true,
+    isPublic: !!post.isPublic,
     zh: {
       title: post.zhTitle,
       subtitle: post.zhSubtitle,
